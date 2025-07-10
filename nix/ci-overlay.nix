@@ -21,7 +21,7 @@
         ];
       };
       runtimeDeps = [
-        koka
+        final.koka
       ];
     in
       final.wrapNeovimUnstable nvim (neovimConfig
@@ -68,11 +68,6 @@
 
       preCheck = ''
         export HOME=$(realpath .)
-      '';
-
-      buildPhase = ''
-        mkdir -p $out
-        cp -r tests $out
       '';
     };
 in {

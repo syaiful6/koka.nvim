@@ -1,0 +1,5 @@
+{
+  "target": "wasm",
+  "include_dirs": ["src", "lib"],
+  "compiler_args": ["--optimize", "--stack=1M"]
+}

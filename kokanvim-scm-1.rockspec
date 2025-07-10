@@ -3,7 +3,7 @@
 
 local _MODREV, _SPECREV = "scm", "-1"
 rockspec_format = "3.0"
-package = "koka.nvim"
+package = "kokanvim"
 version = _MODREV .. _SPECREV
 
 dependencies = {
@@ -21,7 +21,14 @@ source = {
 build = {
 	type = "builtin",
 	copy_directories = {
-		"doc",
 		"ftplugin",
+		"lua",
+		"plugin", 
+		"queries",
+		"tests",
 	},
+}
+
+test = {
+	type = "busted",
 }

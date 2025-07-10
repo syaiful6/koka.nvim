@@ -12,7 +12,7 @@
       buildLuarocksPackage {
         pname = name;
         version = "scm-1";
-        knownRockspec = "${self}/koka.nvim-scm-1.rockspec";
+        knownRockspec = "${self}/kokanvim-scm-1.rockspec";
         src = self;
         disabled = luaOlder "5.1";
       }) {};

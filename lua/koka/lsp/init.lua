@@ -5,31 +5,9 @@
 
 local config = require('koka.config.internal')
 local project = require('koka.project')
-local constant = require('koka.constant')
+local lsp_helpers = require('koka.lsp.helpers')
 
 local M = {}
-
-local function get_lsp_cmd(project_config)
-  local cmd = { 'koka', '--language-server', '--buildtag=nvim' }
-
-  -- Add include directories
-  if project_config.include_dirs then
-    for _, include_dir in ipairs(project_config.include_dirs) do
-      table.insert(cmd, '--include=' .. include_dir)
-    end
-  end
-
-  -- Add additional compiler arguments
-  if project_config.compiler_args then
-    for _, arg in ipairs(project_config.compiler_args) do
-      table.insert(cmd, arg)
-    end
-  end
-
-  table.insert(cmd, '--lsstdio')
-
-  return cmd
-end
 
 ---@class koka.lsp.StartConfig: koka.lsp.ClientConfig
 ---@field root_dir string | nil
@@ -47,9 +25,9 @@ end
 M.start = function(bufnr)
   bufnr = bufnr or vim.api.nvim_get_current_buf()
   local bufname = vim.api.nvim_buf_get_name(bufnr)
-  local kk_config = vim.lsp.config[constant.lsp_client_name] or {}
-
-  local lsp_start_config = vim.tbl_deep_extend('force', config.lsp, kk_config)
+  local kk_config = vim.lsp.config[lsp_helpers.koka_client_name] or {}
+  ---@type koka.lsp.StartConfig
+  local lsp_start_config = vim.tbl_deep_extend('force', config.lsp, kk_config) --[[@as koka.lsp.StartConfig]]
 
   project.get_resolved_config(bufname, function(project_config)
     if not project_config.cwd then
@@ -63,19 +41,21 @@ No project root found.
       project_config.cwd = vim.fs.dirname(bufname)
     end
 
-    -- TODO: we need to normalize root_dir on Windows
-    lsp_start_config.root_dir = project_config.cwd
+    -- Normalize paths for consistent comparison
+    local normalized_cwd = vim.fs.normalize(project_config.cwd)
+    lsp_start_config.root_dir = normalized_cwd
     lsp_start_config.settings = type(lsp_start_config.settings) == 'function'
-        and lsp_start_config.settings(project_config.cwd)
+        and lsp_start_config.settings(normalized_cwd)
       or lsp_start_config.settings
-    lsp_start_config.cmd = get_lsp_cmd(project_config)
-    lsp_start_config.name = constant.lsp_client_name
+    lsp_start_config.cmd = lsp_helpers.get_lsp_cmd(project_config)
+    lsp_start_config.name = lsp_helpers.koka_client_name
     lsp_start_config.filetypes = { 'koka' }
 
     -- Check if client is already running
-    local clients = vim.lsp.get_active_clients { name = constant.lsp_client_name }
+    local clients = lsp_helpers.get_active_lsp_clients()
     for _, client in ipairs(clients) do
-      if client.config.root_dir == project_config.cwd then
+      local client_root_dir = vim.fs.normalize(client.config.root_dir or '')
+      if client_root_dir == normalized_cwd then
         -- Client already running for this project
         vim.lsp.buf_attach_client(bufnr, client.id)
         return
@@ -102,10 +82,7 @@ end
 ---@param bufnr? number The buffer number (optional), default to the current buffer
 M.stop = function(bufnr)
   bufnr = bufnr or vim.api.nvim_get_current_buf()
-  local clients = vim.lsp.get_active_clients {
-    bufnr = bufnr,
-    name = constant.lsp_client_name,
-  }
+  local clients = lsp_helpers.get_active_lsp_clients(bufnr)
 
   for _, client in ipairs(clients) do
     vim.lsp.stop_client(client.id)
@@ -129,11 +106,7 @@ end
 ---@return boolean is_running true if LSP client is running
 M.get_status = function(bufnr)
   bufnr = bufnr or vim.api.nvim_get_current_buf()
-  local clients = vim.lsp.get_active_clients {
-    bufnr = bufnr,
-    name = constant.lsp_client_name,
-  }
-
+  local clients = lsp_helpers.get_active_lsp_clients(bufnr)
   return #clients > 0
 end
 

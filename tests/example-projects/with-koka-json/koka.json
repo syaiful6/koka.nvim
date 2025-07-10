@@ -1,0 +1,6 @@
+{
+  "target": "c",
+  "cwd": "./build",
+  "include_dirs": ["modules"],
+  "compiler_args": ["--debug"]
+}
