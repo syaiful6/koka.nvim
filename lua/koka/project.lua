@@ -2,7 +2,7 @@
 ---@brief [[
 ---Project detection and configuration management for Koka
 ---@brief ]]
-local constant = require('koka.constant')
+local lsp_helpers = require('koka.lsp.helpers')
 
 local project = {}
 
@@ -93,10 +93,14 @@ end
 ---@param file_name string
 ---@return string | nil root_dir The root directory of the active client for file_name (if there is one)
 local function get_mb_active_client_root(file_name)
-  local clients = vim.lsp.get_active_clients { name = constant.lsp_client_name }
+  local clients = lsp_helpers.get_active_lsp_clients()
+  local normalized_file_name = vim.fs.normalize(file_name)
   for _, client in ipairs(clients) do
-    if client.config.root_dir and vim.startswith(file_name, client.config.root_dir) then
-      return client.config.root_dir
+    if client.config.root_dir then
+      local normalized_root_dir = vim.fs.normalize(client.config.root_dir)
+      if vim.startswith(normalized_file_name, normalized_root_dir) then
+        return normalized_root_dir
+      end
     end
   end
   return nil
@@ -161,15 +165,11 @@ function project.get_resolved_config(file_name, callback)
   ---@param project_config? koka.project.Config
   ---@return koka.project.Config
   local function resolve_config(project_config)
-    local resolved = vim.deepcopy(default_config)
-
     if project_config then
-      -- Merge top-level fields
-      for key, value in pairs(project_config) do
-        resolved[key] = value
-      end
+      return vim.tbl_deep_extend('force', {}, default_config, project_config)
+    else
+      return vim.deepcopy(default_config)
     end
-    return resolved
   end
   if callback then
     get_project_config(current_dir, function(project_dir, project_config)
@@ -177,6 +177,15 @@ function project.get_resolved_config(file_name, callback)
       -- Resolve cwd if not explicitly set
       if not resolved.cwd then
         resolved.cwd = project_dir or current_dir
+      end
+      -- Normalize the cwd path for consistency
+      -- If cwd is relative, resolve it relative to the project directory
+      if resolved.cwd then
+        if not (resolved.cwd:match('^/') or resolved.cwd:match('^%a:')) then -- Unix absolute or Windows drive
+          local base_dir = project_dir or current_dir
+          resolved.cwd = vim.fs.joinpath(base_dir, resolved.cwd)
+        end
+        resolved.cwd = vim.fs.normalize(resolved.cwd)
       end
       callback(resolved)
     end)
@@ -186,6 +195,15 @@ function project.get_resolved_config(file_name, callback)
     -- Resolve cwd if not explicitly set
     if not resolved.cwd then
       resolved.cwd = project_dir or current_dir
+    end
+    -- Normalize the cwd path for consistency
+    -- If cwd is relative, resolve it relative to the project directory
+    if resolved.cwd then
+      if not (resolved.cwd:match('^/') or resolved.cwd:match('^%a:')) then -- Unix absolute or Windows drive
+        local base_dir = project_dir or current_dir
+        resolved.cwd = vim.fs.joinpath(base_dir, resolved.cwd)
+      end
+      resolved.cwd = vim.fs.normalize(resolved.cwd)
     end
     return resolved
   end

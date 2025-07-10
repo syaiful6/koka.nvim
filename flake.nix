@@ -25,7 +25,7 @@
     koka-overlay = final: prev: {
       kokapkgs = inputs.koka.packages.${prev.system};
     };
-    name = "kokavim";
+    name = "kokanvim";
     plugin-overlay = import ./nix/plugin-overlay.nix {inherit name self;};
     ci-overlay = import ./nix/ci-overlay.nix {
       inherit self;

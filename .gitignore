@@ -6,3 +6,4 @@ result-*
 .repro
 .pre-commit-config.yaml
 CLAUDE.md
+.koka
