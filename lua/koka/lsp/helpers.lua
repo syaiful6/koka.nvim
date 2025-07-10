@@ -12,7 +12,7 @@ local M = {}
 
 M.koka_client_name = 'koka'
 
----@param bufnr number the buffer to get clients for
+---@param bufnr? number the buffer to get clients for
 ---@param filter? vim.lsp.get_clients.Filter
 ---@return vim.lsp.Client[] kk_clients The koka clients
 M.get_active_lsp_clients = function(bufnr, filter)

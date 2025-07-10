@@ -1,5 +1,7 @@
 local helpers = require('tests.helpers')
 
+---@diagnostic disable: duplicate-set-field
+
 describe('koka.project', function()
   local project
 
@@ -20,13 +22,14 @@ describe('koka.project', function()
       local file_path = helpers.get_file_path('with-config', 'src/example.kk')
       local config = project.get_project_config(file_path)
       assert.is_not_nil(config)
-      assert.equals('wasm', config.target)
+      assert.equal('wasm', config.target)
       assert.same({ 'src', 'lib' }, config.include_dirs)
     end)
 
     it('should work with callback', function()
       local file_path = helpers.get_file_path('with-koka-json', 'modules/core.kk')
       local callback_called = false
+      ---@type koka.project.Config|nil
       local received_config = nil
 
       project.get_project_config(file_path, function(config)
@@ -36,7 +39,8 @@ describe('koka.project', function()
 
       assert.is_true(callback_called)
       assert.is_not_nil(received_config)
-      assert.equals('c', received_config.target)
+      assert(received_config ~= nil)
+      assert.equal('c', received_config.target)
     end)
   end)
 
@@ -47,7 +51,7 @@ describe('koka.project', function()
       local config = project.get_resolved_config(file_path)
 
       assert.is_not_nil(config)
-      assert.equals('c', config.target)
+      assert.equal('c', config.target)
       assert.same({}, config.include_dirs)
       assert.same({}, config.compiler_args)
       assert.is_not_nil(config.cwd)
@@ -58,7 +62,7 @@ describe('koka.project', function()
 
       local config = project.get_resolved_config(file_path)
 
-      assert.equals('wasm', config.target)
+      assert.equal('wasm', config.target)
       assert.same({ 'src', 'lib' }, config.include_dirs)
       assert.same({ '--optimize', '--stack=1M' }, config.compiler_args)
     end)
@@ -69,10 +73,7 @@ describe('koka.project', function()
       local config = project.get_resolved_config(file_path)
 
       -- Check that cwd ends with the project path (handle relative vs absolute paths)
-      assert.is_true(
-        config.cwd:match('simple%-package$') ~= nil,
-        "Expected cwd to end with 'simple-package', got: " .. config.cwd
-      )
+      assert.is_true(config.cwd:match('simple%-package$') ~= nil)
     end)
 
     it('should use explicit cwd from config', function()
@@ -81,12 +82,13 @@ describe('koka.project', function()
 
       -- cwd should be resolved relative to project directory and normalized
       local expected_cwd = vim.fs.joinpath(helpers.get_project_path('with-koka-json'), 'build')
-      assert.equals(vim.fs.normalize(expected_cwd), config.cwd)
+      assert.equal(vim.fs.normalize(expected_cwd), config.cwd)
     end)
 
     it('should work with callback', function()
       local file_path = helpers.get_file_path('with-koka-json', 'modules/core.kk')
       local callback_called = false
+      ---@type koka.project.Config|nil
       local received_config = nil
 
       project.get_resolved_config(file_path, function(config)
@@ -96,7 +98,8 @@ describe('koka.project', function()
 
       assert.is_true(callback_called)
       assert.is_not_nil(received_config)
-      assert.equals('c', received_config.target)
+      assert(received_config ~= nil)
+      assert.equal('c', received_config.target)
     end)
   end)
 
@@ -127,7 +130,7 @@ describe('koka.project', function()
 
       local root_dir = project.get_config_root_dir({}, '/existing/project/file.kk')
 
-      assert.equals('/existing/project', root_dir)
+      assert.equal('/existing/project', root_dir)
     end)
 
     it("should use config.root_dir if it's a string", function()
@@ -135,7 +138,7 @@ describe('koka.project', function()
 
       local root_dir = project.get_config_root_dir(config, '/test/file.kk')
 
-      assert.equals('/custom/root', root_dir)
+      assert.equal('/custom/root', root_dir)
     end)
 
     it("should call config.root_dir if it's a function", function()
@@ -147,7 +150,7 @@ describe('koka.project', function()
 
       local root_dir = project.get_config_root_dir(config, '/test/file.kk')
 
-      assert.equals('/function/root', root_dir)
+      assert.equal('/function/root', root_dir)
     end)
 
     it('should use default implementation when no config.root_dir', function()
@@ -156,10 +159,7 @@ describe('koka.project', function()
       local root_dir = project.get_config_root_dir({}, file_path)
 
       -- Check that root_dir ends with the project path
-      assert.is_true(
-        root_dir and root_dir:match('simple%-package$') ~= nil,
-        "Expected root_dir to end with 'simple-package', got: " .. tostring(root_dir)
-      )
+      assert.is_true(root_dir and root_dir:match('simple%-package$') ~= nil)
     end)
 
     it('should work with callback', function()
@@ -170,7 +170,7 @@ describe('koka.project', function()
         callback_root = root
       end)
 
-      assert.equals('/callback/root', callback_root)
+      assert.equal('/callback/root', callback_root)
     end)
   end)
 end)

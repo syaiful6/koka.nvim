@@ -24,7 +24,12 @@ local function get_project_config(path, callback)
   })[1])
 
   if not project_dir then
-    return callback and callback(nil, nil) or nil, nil
+    if callback then
+      callback(nil, nil)
+      return
+    else
+      return nil, nil
+    end
   end
 
   -- Try to find and parse configuration files
@@ -51,7 +56,12 @@ local function get_project_config(path, callback)
     end
   end
 
-  return callback and callback(project_dir, project_config) or project_dir, project_config
+  if callback then
+    callback(project_dir, project_config)
+    return
+  else
+    return project_dir, project_config
+  end
 end
 
 ---The default implementation used for `vim.g.koka.server.root_dir`
@@ -132,7 +142,7 @@ end
 ---Get project configuration for the given file or current buffer
 ---@param file_name? string The file path (defaults to current buffer)
 ---@param callback? fun(project_config: koka.project.Config?) If `nil`, this function runs synchronously
----@return koka.project.Config? project_config
+---@return koka.project.Config? project_config (if `callback ~= nil` and successful)
 function project.get_project_config(file_name, callback)
   file_name = file_name or vim.api.nvim_buf_get_name(0)
   local current_dir = vim.fs.dirname(file_name)
@@ -150,7 +160,7 @@ end
 ---Get resolved project configuration with defaults applied
 ---@param file_name? string The file path (defaults to current buffer)
 ---@param callback? fun(resolved_config: koka.project.Config) If `nil`, this function runs synchronously
----@return koka.project.Config resolved_config
+---@return koka.project.Config? resolved_config (if `callback == nil` and successful)
 function project.get_resolved_config(file_name, callback)
   file_name = file_name or vim.api.nvim_buf_get_name(0)
   local current_dir = vim.fs.dirname(file_name)

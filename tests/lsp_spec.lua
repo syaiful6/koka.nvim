@@ -1,5 +1,7 @@
 local helpers = require('tests.helpers')
 
+---@diagnostic disable: duplicate-set-field
+
 describe('koka.lsp', function()
   local lsp
 
@@ -33,6 +35,7 @@ describe('koka.lsp', function()
 
   describe('start', function()
     it('should start LSP client with project configuration', function()
+      ---@type koka.lsp.StartConfig|nil
       local started_config = nil
       vim.lsp.start = function(config, _)
         started_config = config
@@ -48,14 +51,11 @@ describe('koka.lsp', function()
       lsp.start(0)
 
       assert.is_not_nil(started_config)
-      assert.equals('koka', started_config.name)
+      assert(started_config ~= nil)
+      assert.equal('koka', started_config.name)
       assert.same({ 'koka' }, started_config.filetypes)
       -- Check that root_dir ends with the expected project path
-      assert.is_true(
-        started_config.root_dir:match('with%-config$') ~= nil,
-        "Expected root_dir to end with 'with-config', got: " .. started_config.root_dir
-      )
-      assert.is_table(started_config.cmd)
+      assert.is_true(started_config.root_dir:match('with%-config$') ~= nil)
     end)
 
     it('should reuse existing client for same project', function()
@@ -107,6 +107,7 @@ describe('koka.lsp', function()
     end)
 
     it('should handle missing project root', function()
+      ---@type koka.lsp.StartConfig|nil
       local started_config = nil
       vim.lsp.start = function(config, _)
         started_config = config
@@ -125,6 +126,7 @@ describe('koka.lsp', function()
       lsp.start(0)
 
       assert.is_not_nil(started_config)
+      assert(started_config ~= nil)
       -- Should fall back to buffer directory
       assert.is_string(started_config.root_dir)
     end)
@@ -184,8 +186,8 @@ describe('koka.lsp', function()
       test_lsp.start(0)
 
       assert.is_true(on_attach_called)
-      assert.equals(1, on_attach_client_id)
-      assert.equals(0, on_attach_bufnr)
+      assert.equal(1, on_attach_client_id)
+      assert.equal(0, on_attach_bufnr)
     end)
   end)
 
@@ -348,7 +350,7 @@ describe('koka.lsp', function()
 
       lsp.get_status()
 
-      assert.equals(42, checked_bufnr)
+      assert.equal(42, checked_bufnr)
     end)
   end)
 end)

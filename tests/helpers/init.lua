@@ -1,5 +1,7 @@
 -- Test helpers and setup for koka.nvim tests
 
+---@diagnostic disable: duplicate-set-field
+
 local helpers = {}
 
 -- Mock vim global for testing

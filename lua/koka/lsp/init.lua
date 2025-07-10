@@ -27,7 +27,7 @@ M.start = function(bufnr)
   local bufname = vim.api.nvim_buf_get_name(bufnr)
   local kk_config = vim.lsp.config[lsp_helpers.koka_client_name] or {}
   ---@type koka.lsp.StartConfig
-  local lsp_start_config = vim.tbl_deep_extend('force', config.lsp, kk_config)
+  local lsp_start_config = vim.tbl_deep_extend('force', config.lsp, kk_config) --[[@as koka.lsp.StartConfig]]
 
   project.get_resolved_config(bufname, function(project_config)
     if not project_config.cwd then

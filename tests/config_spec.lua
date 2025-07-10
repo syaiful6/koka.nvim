@@ -22,8 +22,8 @@ describe('koka.config', function()
       }
 
       -- Plugin should access global config
-      assert.equals(false, vim.g.kokanvim.lsp.auto_attach)
-      assert.equals(true, vim.g.kokanvim.lsp.debug)
+      assert.equal(false, vim.g.kokanvim.lsp.auto_attach)
+      assert.equal(true, vim.g.kokanvim.lsp.debug)
     end)
   end)
 
