@@ -5,3 +5,4 @@ result-*
 .luarc.json
 .repro
 .pre-commit-config.yaml
+CLAUDE.md

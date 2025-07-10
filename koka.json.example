@@ -1,0 +1,11 @@
+{
+  "target": "c",
+  "include_dirs": [
+    "src",
+    "lib"
+  ],
+  "compiler_args": [
+    "--optimize",
+    "--stack-size=8M"
+  ]
+}
