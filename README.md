@@ -27,7 +27,6 @@ intelligent code execution.
 ```lua
 {
   "syaiful6/koka.nvim",
-  ft = "koka", -- Load only for Koka files
   dependencies = {
     "nvim-treesitter/nvim-treesitter",
   },
@@ -39,7 +38,6 @@ intelligent code execution.
 ```lua
 use {
   "syaiful6/koka.nvim",
-  ft = "koka",
   requires = { "nvim-treesitter/nvim-treesitter" },
 }
 ```
@@ -76,11 +74,19 @@ required!
 
 | Command | Description |
 |---------|-------------|
-| `:KokaLspStart` | Start the Koka LSP server |
-| `:KokaLspStop` | Stop the Koka LSP server |
-| `:KokaLspRestart` | Restart the Koka LSP server |
-| `:KokaLspStatus` | Check LSP server status |
+| `:KokaLsp start` | Start the Koka LSP server |
+| `:KokaLsp stop` | Stop the Koka LSP server |
+| `:KokaLsp restart` | Restart the Koka LSP server |
+
+### General Commands
+
+| Command | Description |
+|---------|-------------|
+| `:KokaRun` | Run function at cursor |
+| `:KokaBuild` | Build current file or project |
+| `:KokaTest` | Run all test functions in current buffer |
 | `:KokaShowConfig` | Show current project configuration |
+| `:KokaRefreshCodeLens` | Refresh code lenses |
 
 ### Code Execution
 
@@ -91,16 +97,10 @@ function patterns:
 - **`test*()`** - Test functions (e.g., `testBasic`, `testAdvanced`)
 - **`example*()`** - Example functions (e.g., `exampleUsage`, `exampleSort`)
 
-#### Manual Execution Commands
-
-| Command | Description |
-|---------|-------------|
-| `:KokaRunFunction` | Run function manually (args: action, file, name) |
-
 ### Codelens Features
 
 When LSP is active, codelens appear above runnable functions showing
-"▶ function_name". Click to execute:
+"▶ function_name". Use `:KokaRun` to execute the function at cursor:
 
 - **Smart Compilation**: Uses `koka/compileFunction` for individual functions,
   `koka/compile` for main
@@ -108,6 +108,9 @@ When LSP is active, codelens appear above runnable functions showing
   targets
 - **Terminal Integration**: Opens execution results in a new terminal tab
 - **Fallback Mode**: Works without LSP using direct `koka -e` execution
+
+> **Note**: Codelens may be clickable in some Neovim configurations, but the
+> recommended way to run functions is using `:KokaRun` command.
 
 ## Project Configuration
 
@@ -140,7 +143,6 @@ Supported targets: `c`, `c32`, `c64c`, `wasm`, `jsnode`
 ```lua
 {
   "syaiful6/koka.nvim",
-  ft = "koka",
   dependencies = {
     "nvim-treesitter/nvim-treesitter",
     "neovim/nvim-lspconfig", -- Optional: for additional LSP features
@@ -152,12 +154,11 @@ Supported targets: `c`, `c32`, `c64c`, `wasm`, `jsnode`
       pattern = "koka",
       callback = function()
         local buf = vim.api.nvim_get_current_buf()
-        vim.keymap.set("n", "<leader>kr", function()
-          require("koka.commands.codelens").run_at_cursor()
-        end, { buffer = buf, desc = "Run Koka function at cursor" })
-        
-        vim.keymap.set("n", "<leader>ks", ":KokaLspStatus<CR>",
-          { buffer = buf, desc = "Check Koka LSP status" })
+        vim.keymap.set("n", "<leader>kr", ":KokaRun<CR>",
+          { buffer = buf, desc = "Run Koka function at cursor" })
+
+        vim.keymap.set("n", "<leader>kb", ":KokaBuild<CR>",
+          { buffer = buf, desc = "Build Koka file" })
 
         vim.keymap.set("n", "<leader>kt", ":KokaTSStatus<CR>",
           { buffer = buf, desc = "Check TreeSitter status" })
@@ -264,11 +265,17 @@ This plugin follows a **filetype-based architecture**:
 ### LSP Issues
 
 ```bash
-# Check LSP status
-:KokaLspStatus
+# Check LSP client status and configuration
+:LspInfo
 
-# Restart LSP
-:KokaLspRestart
+# Start LSP server
+:KokaLsp start
+
+# Restart LSP server
+:KokaLsp restart
+
+# Stop LSP server
+:KokaLsp stop
 
 # Check if Koka compiler is in PATH
 :!which koka
@@ -278,7 +285,7 @@ This plugin follows a **filetype-based architecture**:
 
 1. Ensure Koka compiler is installed and in PATH
 2. Check project configuration with `:KokaShowConfig`
-3. Verify LSP is running with `:KokaLspStatus`
+3. Verify LSP is running with `:LspInfo`
 4. For C target, ensure you have a C compiler installed
 
 ## Contributing
