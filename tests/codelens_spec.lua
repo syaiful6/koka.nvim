@@ -168,13 +168,14 @@ describe('koka.commands.codelens', function()
       assert.is_true(tabnew_called)
       assert.is_true(startinsert_called)
       assert.equal('/test/project', executed_cwd)
-      assert.is_not_nil(executed_cmd:match('koka'))
-      assert.is_not_nil(executed_cmd:match('--target=wasm'))
-      assert.is_not_nil(executed_cmd:match('--include=lib'))
-      assert.is_not_nil(executed_cmd:match('--include=src'))
-      assert.is_not_nil(executed_cmd:match('--optimize'))
-      assert.is_not_nil(executed_cmd:match('-e'))
-      assert.is_not_nil(executed_cmd:match('/test/project/main.kk'))
+      assert.is_not_nil(executed_cmd)
+      assert.is_not_nil(executed_cmd and executed_cmd:match('koka'))
+      assert.is_not_nil(executed_cmd and executed_cmd:match('--target=wasm'))
+      assert.is_not_nil(executed_cmd and executed_cmd:match('--include=lib'))
+      assert.is_not_nil(executed_cmd and executed_cmd:match('--include=src'))
+      assert.is_not_nil(executed_cmd and executed_cmd:match('--optimize'))
+      assert.is_not_nil(executed_cmd and executed_cmd:match('-e'))
+      assert.is_not_nil(executed_cmd and executed_cmd:match('/test/project/main.kk'))
 
       -- Restore original vim.cmd
       vim.cmd = original_cmd
@@ -213,8 +214,11 @@ describe('koka.commands.codelens', function()
       codelens.run_at_cursor()
 
       assert.is_true(run_called)
-      assert.equal('run', run_args[1])
-      assert.equal('main', run_args[3])
+      assert.is_not_nil(run_args)
+      if run_args then
+        assert.equal('run', run_args[1])
+        assert.equal('main', run_args[3])
+      end
     end)
 
     it('should warn when no runnable function at cursor', function()

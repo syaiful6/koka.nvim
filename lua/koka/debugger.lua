@@ -35,9 +35,11 @@ function M.execute(client, project_config, args, callback)
   end
 
   -- Send LSP command request
+  ---@diagnostic disable-next-line: param-type-mismatch
   client.request('workspace/executeCommand', {
     command = command_name,
     arguments = command_args,
+    ---@diagnostic disable-next-line: param-type-mismatch
   }, function(err, result)
     if err then
       vim.notify('Error executing Koka command: ' .. tostring(err.message or err), vim.log.levels.ERROR)
