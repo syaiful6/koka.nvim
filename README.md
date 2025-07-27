@@ -121,7 +121,7 @@ Create a `koka.json` or `.koka.json` file in your project root:
   "target": "c",
   "cwd": "./build",
   "include_dirs": ["lib", "src"],
-  "compiler_args": ["--optimize", "--stack=1M"]
+  "compiler_args": ["--optimize=2"]
 }
 ```
 
@@ -159,9 +159,6 @@ Supported targets: `c`, `c32`, `c64c`, `wasm`, `jsnode`
 
         vim.keymap.set("n", "<leader>kb", ":KokaBuild<CR>",
           { buffer = buf, desc = "Build Koka file" })
-
-        vim.keymap.set("n", "<leader>kt", ":KokaTSStatus<CR>",
-          { buffer = buf, desc = "Check TreeSitter status" })
       end,
     })
   end,
