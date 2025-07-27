@@ -110,4 +110,39 @@ M.get_status = function(bufnr)
   return #clients > 0
 end
 
+---@enum koka.lsp.Cmd
+local Cmd = {
+  start = 'start',
+  stop = 'stop',
+  restart = 'restart',
+}
+
+local function koka_lsp_user_cmd(opts)
+  local fargs = opts.fargs
+  local cmd = table.remove(fargs, 1)
+  ---@cast cmd koka.lsp.Cmd
+  if cmd == Cmd.start then
+    M.start()
+  elseif cmd == Cmd.stop then
+    M.stop()
+  elseif cmd == Cmd.restart then
+    M.restart()
+  end
+end
+
+vim.api.nvim_create_user_command('KokaLsp', koka_lsp_user_cmd, {
+  nargs = '+',
+  desc = 'Start, stops the Koka LSP client',
+  complete = function(arg_lead, cmdline, _)
+    local clients = lsp_helpers.get_active_lsp_clients()
+    ---@type koka.lsp.Cmd[]
+    local commands = #clients == 0 and { 'start' } or { 'stop', 'restart' }
+    if cmdline:match('^KokaLsp%s+%w*$') then
+      return vim.tbl_filter(function(command)
+        return command:find(arg_lead) ~= nil
+      end, commands)
+    end
+  end,
+})
+
 return M

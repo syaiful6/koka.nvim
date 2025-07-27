@@ -49,8 +49,8 @@
           gen-luarc.overlays.default
         ];
       };
-      kokaVersion = "3.1.3";
-      koka = pkgs.kokapkgs.versions.${kokaVersion};
+      kokaVersion = "3.2.2";
+      koka = pkgs.kokapkgs.${kokaVersion};
       luarc-plugins = with pkgs.lua51Packages; (with pkgs.vimPlugins; [
         toggleterm-nvim
         telescope-nvim

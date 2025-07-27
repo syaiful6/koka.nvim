@@ -16,7 +16,15 @@ local function init()
     return
   end
   vim.g.kokanvim_loaded = true
-  --- TODO:: Attach commands
+
+  -- Setup TreeSitter commands and ensure parser is installed
+  local ts_commands = require('koka.commands.treesitter')
+  ts_commands.setup()
+  ts_commands.ensure_parser()
+
+  -- Setup other commands
+  require('koka.commands.codelens').setup()
+  require('koka.commands').setup()
 end
 
 M.ftplugin = function()
