@@ -18,9 +18,8 @@ local function init()
   vim.g.kokanvim_loaded = true
 
   -- Setup TreeSitter commands and ensure parser is installed
-  local ts_commands = require('koka.commands.treesitter')
-  ts_commands.setup()
-  ts_commands.ensure_parser()
+  local ts_commands = require('koka.treesitter')
+  ts_commands.install_parser()
 
   -- Setup other commands
   require('koka.commands.codelens').setup()
