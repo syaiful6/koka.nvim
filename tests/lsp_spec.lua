@@ -136,7 +136,14 @@ describe('koka.lsp', function()
       local on_attach_client_id = nil
       local on_attach_bufnr = nil
 
-      vim.lsp.start = function(_, _)
+      vim.lsp.start = function(config, _)
+        if type(config.on_attach) == 'function' then
+          local client = {
+            name = 'koka',
+            id = 1,
+          } --- [[ @as vim.lsp.Client ]]
+          config.on_attach(client, 0) -- Mock client and bufnr
+        end
         return 1
       end
 
@@ -164,9 +171,9 @@ describe('koka.lsp', function()
       package.loaded['koka.config.internal'] = {
         lsp = {
           auto_attach = true,
-          on_attach = function(client_id, bufnr)
+          on_attach = function(client, bufnr)
             on_attach_called = true
-            on_attach_client_id = client_id
+            on_attach_client_id = client.id
             on_attach_bufnr = bufnr
           end,
           settings = {},

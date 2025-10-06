@@ -12,7 +12,7 @@ local KokaDefaultConfig = {
   lsp = {
     ---@type boolean | (fun():boolean) Whether to automatically attach the LSP client.
     auto_attach = true,
-    ---@type (fun(client:number,bufnr:number))
+    ---@type (fun(client:vim.lsp.Client,bufnr:number))
     on_attach = function(_, _) end,
     settings = {},
   },

@@ -64,16 +64,14 @@ No project root found.
 
     -- Start new LSP client
     local client_id = vim.lsp.start(lsp_start_config, { bufnr = bufnr })
-
-    if client_id then
-      vim.lsp.buf_attach_client(bufnr, client_id)
-
-      -- Call on_attach if configured
-      if lsp_start_config.on_attach then
-        lsp_start_config.on_attach(client_id, bufnr)
-      end
-    else
-      vim.notify('[koka.nvim] Failed to start Koka LSP server', vim.log.levels.ERROR)
+    if not client_id then
+      vim.notify(
+        [[
+[koka.nvim] Failed to start Koka LSP server.
+        ]],
+        vim.log.levels.ERROR
+      )
+      return
     end
   end)
 end
@@ -109,40 +107,5 @@ M.get_status = function(bufnr)
   local clients = lsp_helpers.get_active_lsp_clients(bufnr)
   return #clients > 0
 end
-
----@enum koka.lsp.Cmd
-local Cmd = {
-  start = 'start',
-  stop = 'stop',
-  restart = 'restart',
-}
-
-local function koka_lsp_user_cmd(opts)
-  local fargs = opts.fargs
-  local cmd = table.remove(fargs, 1)
-  ---@cast cmd koka.lsp.Cmd
-  if cmd == Cmd.start then
-    M.start()
-  elseif cmd == Cmd.stop then
-    M.stop()
-  elseif cmd == Cmd.restart then
-    M.restart()
-  end
-end
-
-vim.api.nvim_create_user_command('KokaLsp', koka_lsp_user_cmd, {
-  nargs = '+',
-  desc = 'Start, stops the Koka LSP client',
-  complete = function(arg_lead, cmdline, _)
-    local clients = lsp_helpers.get_active_lsp_clients()
-    ---@type koka.lsp.Cmd[]
-    local commands = #clients == 0 and { 'start' } or { 'stop', 'restart' }
-    if cmdline:match('^KokaLsp%s+%w*$') then
-      return vim.tbl_filter(function(command)
-        return command:find(arg_lead) ~= nil
-      end, commands)
-    end
-  end,
-})
 
 return M

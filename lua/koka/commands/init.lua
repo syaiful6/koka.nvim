@@ -5,53 +5,17 @@
 
 local M = {}
 
----Setup Koka user commands
-function M.setup()
-  local codelens = require('koka.commands.codelens')
-
-  -- Command to run function at cursor
-  vim.api.nvim_create_user_command('KokaRun', function()
-    codelens.run_at_cursor()
-  end, {
-    desc = 'Run Koka function at cursor',
-  })
-
-  -- Command to build current file/project
-  vim.api.nvim_create_user_command('KokaBuild', function(opts)
-    local args = opts.fargs
-    local file_path = #args > 0 and args[1] or vim.api.nvim_buf_get_name(0)
-    M.build_file(file_path)
-  end, {
-    nargs = '?',
-    complete = 'file',
-    desc = 'Build Koka file or project',
-  })
-
-  -- Command to test current project
-  vim.api.nvim_create_user_command('KokaTest', function()
-    M.run_tests()
-  end, {
-    desc = 'Run Koka tests',
-  })
-
-  -- Command to show project configuration
-  vim.api.nvim_create_user_command('KokaShowConfig', function()
-    M.show_config()
-  end, {
-    desc = 'Show current Koka project configuration',
-  })
-
-  -- Code lens refresh command
-  vim.api.nvim_create_user_command('KokaRefreshCodeLens', function()
-    local bufnr = vim.api.nvim_get_current_buf()
-    vim.lsp.codelens.refresh { bufnr = bufnr }
-    -- Also refresh our custom code lenses
-    codelens.display_custom_codelenses(bufnr)
-    vim.notify('Code lenses refreshed', vim.log.levels.INFO)
-  end, {
-    desc = 'Refresh Koka code lenses',
-  })
-end
+---@class koka.commands.Subcommand
+---
+---The command implementation
+---@field impl fun(args: string[], opts: vim.api.keyset.user_command)
+---
+---Command completion callback, taking the lead of the subcommand's arguments
+---Or a list of subcommand
+---@field complete? string[] | fun(args: string[]): string[]
+---
+---Whether the command supports a bang!
+---@field bang? boolean
 
 ---Build a Koka file
 ---@param file_path string
@@ -89,7 +53,6 @@ function M.build_file(file_path)
 
     -- Create terminal command
     local term_cmd = table.concat(cmd, ' ')
-    -- local title = string.format('Building: %s', vim.fs.basename(file_path))
 
     -- Run in terminal
     vim.cmd('tabnew')
@@ -105,38 +68,6 @@ function M.build_file(file_path)
     })
     vim.cmd('startinsert')
   end)
-end
-
----Run tests in the current project
-function M.run_tests()
-  local bufnr = vim.api.nvim_get_current_buf()
-  local file_path = vim.api.nvim_buf_get_name(bufnr)
-  local codelens = require('koka.commands.codelens')
-
-  -- Find test functions in current buffer and run them
-  local runnables = {}
-  local lines = vim.api.nvim_buf_get_lines(bufnr, 0, -1, false)
-
-  for _, line in ipairs(lines) do
-    local func_name = line:match('^%s*pub%s*fun%s+([%w%-]+)%s*%(') or line:match('^%s*fun%s+([%w%-]+)%s*%(')
-    if func_name and func_name:match('^test') then
-      table.insert(runnables, {
-        name = func_name,
-        type = 'test',
-      })
-    end
-  end
-
-  if #runnables == 0 then
-    vim.notify('No test functions found in current buffer', vim.log.levels.WARN)
-    return
-  end
-
-  -- Run each test function
-  for _, runnable in ipairs(runnables) do
-    vim.notify(string.format('Running test: %s', runnable.name), vim.log.levels.INFO)
-    codelens.handle_run_command(runnable.type, file_path, runnable.name)
-  end
 end
 
 ---Show current project configuration
@@ -191,6 +122,151 @@ function M.show_config()
     vim.keymap.set('n', '<Esc>', '<cmd>close<cr>', { buffer = buf })
     vim.keymap.set('n', 'q', '<cmd>close<cr>', { buffer = buf })
   end)
+end
+
+---@type table<string, koka.commands.Subcommand>
+local command_tbl = {
+  run = {
+    impl = function()
+      require('koka.commands.codelens').run_at_cursor()
+    end,
+  },
+  build = {
+    impl = function(args)
+      local file_path = #args > 0 and args[1] or vim.api.nvim_buf_get_name(0)
+      M.build_file(file_path)
+    end,
+  },
+  config = {
+    impl = function()
+      M.show_config()
+    end,
+  },
+  refresh_codelens = {
+    impl = function()
+      local bufnr = vim.api.nvim_get_current_buf()
+      vim.lsp.codelens.refresh { bufnr = bufnr }
+      -- Also refresh our custom code lenses
+      require('koka.commands.codelens').display_custom_codelenses(bufnr)
+      vim.notify('Code lenses refreshed', vim.log.levels.INFO)
+    end,
+  },
+}
+
+---@param name string The name of the subcommand
+---@param subcmd_tbl table<string, koka.commands.Subcommand> The subcommand's subcommand table
+local function register_subcommand_tbl(name, subcmd_tbl)
+  command_tbl[name] = {
+    impl = function(args, ...)
+      local subcmd = subcmd_tbl[table.remove(args, 1)]
+      if subcmd then
+        subcmd.impl(args, ...)
+      else
+        vim.notify(
+          ([[
+Koka %s: Expected subcommand.
+Available subcommands:
+%s
+]]):format(name, table.concat(vim.tbl_keys(subcmd_tbl), ', ')),
+          vim.log.levels.ERROR
+        )
+      end
+    end,
+    complete = function(subcmd_arg_lead)
+      local subcmd, next_arg_lead = subcmd_arg_lead:match('^(%S+)%s*(.*)$')
+      if subcmd and next_arg_lead and subcmd_tbl[subcmd] and subcmd_tbl[subcmd].complete then
+        return subcmd_tbl[subcmd].complete(next_arg_lead)
+      end
+      if subcmd_arg_lead and subcmd_arg_lead ~= '' then
+        return vim
+          .iter(subcmd_tbl)
+          ---@param subcmd_name string
+          :filter(function(subcmd_name)
+            return subcmd_name:find(subcmd_arg_lead) ~= nil
+          end)
+          :totable()
+      end
+      return vim.tbl_keys(subcmd_tbl)
+    end,
+  }
+end
+
+---@type table<string, koka.commands.Subcommand>
+local lsp_subcmd_tbl = {
+  start = {
+    impl = function()
+      require('koka.lsp').start()
+    end,
+  },
+  stop = {
+    impl = function()
+      require('koka.lsp').stop()
+    end,
+  },
+  restart = {
+    impl = function()
+      require('koka.lsp').restart()
+    end,
+  },
+}
+
+register_subcommand_tbl('lsp', lsp_subcmd_tbl)
+
+local function koka_command_imp(opts)
+  local fargs = opts.fargs
+  local cmd = fargs[1]
+  local args = #fargs > 1 and vim.list_slice(fargs, 2) or {}
+  local command = command_tbl[cmd]
+  if not command then
+    vim.notify(string.format('[koka.nvim] Unknown command: %s form :Koka', cmd), vim.log.levels.ERROR)
+    return
+  end
+  command.impl(args, opts)
+end
+
+---@generic K,V
+---@param predicate fun(value: V): boolean
+---@param tbl table<K,V>
+---@return K[]
+local function filter_keys(predicate, tbl)
+  local result = {}
+  for k, v in pairs(tbl) do
+    if predicate(v) then
+      table.insert(result, k)
+    end
+  end
+  return result
+end
+
+---Setup Koka user commands
+function M.setup()
+  vim.api.nvim_create_user_command('Koka', koka_command_imp, {
+    nargs = '+',
+    complete = function(arg_lead, cmdline, _)
+      local commands = cmdline:match("^['<,'>]*Koka!") ~= nil
+          and filter_keys(function(c)
+            return c.bang
+          end, command_tbl)
+        or vim.tbl_keys(command_tbl)
+
+      local subcmd, subcmd_arg_lead = cmdline:match("^['<,'>]*Koka[!]*%s(%S+)%s(.*)$")
+      if subcmd and subcmd_arg_lead and command_tbl[subcmd] and command_tbl[subcmd].complete then
+        local complete = command_tbl[subcmd].complete
+        if type(complete) == 'table' then
+          return vim.tbl_filter(function(c)
+            return c:find(subcmd_arg_lead) ~= nil
+          end, complete)
+        end
+        return complete and complete(subcmd_arg_lead) or {}
+      end
+      if cmdline:match("^['<,'>]*Koka[!]*%s+%w$") then
+        return vim.tbl_filter(function(c)
+          return c:find(arg_lead) ~= nil
+        end, commands)
+      end
+    end,
+    bang = false,
+  })
 end
 
 return M
