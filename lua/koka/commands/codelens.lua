@@ -5,19 +5,6 @@
 
 local M = {}
 
--- NOTE: This function is kept for reference but not currently used
--- Regex patterns for detecting runnable functions (based on VS Code extension)
--- Matches: fun main(), fun test*(), fun example*()
--- local function get_runnable_pattern(has_module_decl)
---   if has_module_decl then
---     -- All functions must be pub when module is declared
---     return '^%s*pub%s+fun%s+([%w%-]*)(main|test[%w%-]*|example[%w%-]*)%s*%('
---   else
---     -- pub is default when no module declaration
---     return '^%s*pub%s*fun%s+([%w%-]*)(main|test[%w%-]*|example[%w%-]*)%s*%('
---   end
--- end
-
 ---Check if buffer has module declaration
 ---@param bufnr number
 ---@return boolean
@@ -206,17 +193,6 @@ end
 
 ---Setup code lens for Koka buffers
 function M.setup()
-  -- Register the run command
-  vim.api.nvim_create_user_command('KokaRunFunction', function(opts)
-    local args = opts.fargs
-    if #args >= 3 then
-      M.handle_run_command(args[1], args[2], args[3])
-    end
-  end, {
-    nargs = '*',
-    desc = 'Run Koka function',
-  })
-
   -- Add LSP command for code lens
   local lsp_helpers = require('koka.lsp.helpers')
 
